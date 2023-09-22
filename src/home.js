@@ -1,30 +1,16 @@
 import { LitElement, css, html } from 'lit'
 import './components/table.js'
+import './components/details.js'
 import {inputStyles} from './input-styles.js'
-// "primary": "#3ae082",
-          
-//  "secondary": "#9dd14b",
-          
-//  "accent": "#4135a0",
-          
-//  "neutral": "#1a191f",
-          
-//  "base-100": "#313036",
-          
-//  "info": "#879fee",
-          
-//  "success": "#3be37b",
-          
-//  "warning": "#94660a",
-          
-//  "error": "#e62d65",
-
 
 export class Home extends LitElement {
   static get properties() {
     return {
       projectName: { type: String },
-      costPerHour: { type: Number }
+      costPerHour: { type: Number },
+      estimatedTimeTo99: { type: Number },
+      estimatedTimeTo95: { type: Number },
+      estimatedTimeTo68: { type: Number },
     }
   }
 
@@ -32,13 +18,22 @@ export class Home extends LitElement {
     super()
     this.projectName = 'My Project App'
     this.costPerHour = 0
-  } 
+    this.estimatedTimeTo99 = 21.28
+    this.estimatedTimeTo95 = 18.62
+    this.estimatedTimeTo68 = 15.96
+  }
+  
+  _changeHours(values) {
+    this.estimatedTimeTo99 = values.estimatedTimeTo99
+    this.estimatedTimeTo95 = values.estimatedTimeTo95
+    this.estimatedTimeTo68 = values.estimatedTimeTo68
+  }
 
   render() {
     return html`
-      <slot></slot>
       <div class="card">
-        <h1>${this.projectName}</h1>
+        <slot></slot>
+        <h2>${this.projectName}</h2>
         <form class="form-project">
           <div class="form-header">
             <div class="form-project">
@@ -48,12 +43,22 @@ export class Home extends LitElement {
               </div>
               <div class="form-control">
                 <label for="costPerHour">Cost per hour $</label>
-                <input id="costPerHour" type="text" @input=${this._changeProjectName}/>
+                <input id="costPerHour" type="number" @input=${this._changeProjectName} min="0"/>
                 <span>dollars.</span>
               </div>
             </div>
           </div>
-          <app-table></app-table>
+          <app-table
+            .changeHours=${this._changeHours.bind(this)}
+          ></app-table>
+          <view-details 
+            .projectName=${this.projectName}
+            .costPerHour=${this.costPerHour}
+            .hours=${this.hours}
+            .estimatedTimeTo99=${this.estimatedTimeTo99}
+            .estimatedTimeTo95=${this.estimatedTimeTo95}
+            .estimatedTimeTo68=${this.estimatedTimeTo68}
+          ></view-details>
         </form>
       </div>
       
@@ -77,9 +82,14 @@ export class Home extends LitElement {
         text-align: center;
       }
       .card {
-        padding: 2em;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 2rem;
+        background-color: #1a191f;
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
       }
-
       .read-the-docs {
         color: #888;
       }
@@ -87,8 +97,9 @@ export class Home extends LitElement {
        font-weight: 700;
       }
       ::slotted(h1) {
-        font-size: 3.2em;
+        font-size: 2.5em;
         line-height: 1.1;
+        margin-top: 0;
       }
 
       button {
@@ -144,6 +155,9 @@ export class Home extends LitElement {
       input:focus,
       input:focus-visible {
         outline-color: #4135a0;
+      }
+      h2 {
+        margin: 0, 0, 1rem, 0;
       }
 
       @media (prefers-color-scheme: light) {

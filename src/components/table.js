@@ -8,15 +8,17 @@ export class Table extends LitElement {
   static get properties() {
     return {
       tableData: { type: Array },
+      changeHours: { type: Function },
     }
   }
+
   constructor() {
     super()
     this.tableData = [
-      { activityName: 'Login screen', optimisticTime: '8', mostLikelyTime: '12', pessimisticTime: '17' },
-      { activityName: 'Personal profile screen', optimisticTime: '24', mostLikelyTime: '32', pessimisticTime: '40' },
+      { activityName: 'Login screen', optimisticTime: '8', mostLikelyTime: '12', pessimisticTime: '24', pert: '13.3', standardDeviation: '2.66', variance: '7.11' },
     ];
-  }    
+  }
+
   render() {
     return html`
       <div class="form-body">
@@ -55,7 +57,7 @@ export class Table extends LitElement {
                     .value="${row.optimisticTime}"
                     @input="${(e) => this._updateInput(e, row, 'optimisticTime')}"
                   />
-                  <span>hours</span>
+                  <span>hours.</span>
                 </div>
               </td>
               <td>
@@ -67,7 +69,7 @@ export class Table extends LitElement {
                     .value="${row.mostLikelyTime}"
                     @input="${(e) => this._updateInput(e, row, 'mostLikelyTime')}"
                   />
-                  <span>hours</span>
+                  <span>hours.</span>
                 </div>
               </td>
               <td>
@@ -79,7 +81,7 @@ export class Table extends LitElement {
                     .value="${row.pessimisticTime}"
                     @input="${(e) => this._updateInput(e, row, 'pessimisticTime')}"
                   />
-                  <span>hours</span>
+                  <span>hours.</span>
                 </div>
               </td>
               <td>
@@ -111,6 +113,48 @@ export class Table extends LitElement {
   
   _updateInput(event, row, propName) {
     row[propName] = event.target.value;
+    if(propName !== 'activityName') {
+      this._onPert(row);
+    }
+  }
+  
+  _onPert(row) {
+    let pert = Number(this.tableData[0]?.pert || 0)
+    let variance = Number(this.tableData[0]?.variance || 0)
+    let standardDeviation = Number(this.tableData[0]?.standardDeviation || 0)
+    if(row) {
+      pert = (Number(row.optimisticTime) + (4 * Number(row.mostLikelyTime)) + Number(row.pessimisticTime)) / 6;
+      row.pert = pert.toFixed(2);
+      standardDeviation = (Number(row.pessimisticTime) - Number(row.optimisticTime)) / 6;
+      row.standardDeviation = standardDeviation.toFixed(2);
+      variance = standardDeviation ** 2;
+      row.variance = variance.toFixed(2);
+    }
+    
+    let totalPert = 0;
+    let totalVariance = 0;
+    let totalStandardDeviation = 0;
+    
+    if (this.tableData.length > 1) {
+      totalPert = this.tableData.reduce((acc, row) => acc + Number(row.pert), 0);
+      totalVariance = this.tableData.reduce((acc, row) => acc + Number(row.variance), 0);
+      totalStandardDeviation = Math.sqrt(totalVariance);
+    } else {
+      totalPert = pert;
+      totalVariance = Number(variance);
+      totalStandardDeviation = Number(standardDeviation);
+    }
+    
+
+    const estimatedTimeTo99 = totalPert + (totalStandardDeviation * 3);
+    const estimatedTimeTo95 = totalPert + (totalStandardDeviation * 2);
+    const estimatedTimeTo68 = totalPert + totalStandardDeviation;
+    
+    this.changeHours({
+      estimatedTimeTo99,
+      estimatedTimeTo95,
+      estimatedTimeTo68,
+    });
   }
 
   _addRow() {
@@ -125,6 +169,7 @@ export class Table extends LitElement {
   
   _removeElement(index) {
     this.tableData = this.tableData.filter((_, i) => i !== index);
+    this._onPert();
   }
   
   static styles = [
@@ -154,6 +199,8 @@ export class Table extends LitElement {
         border-spacing: 0.1;
         width: 100%;
         background-color: #ffffff;
+        border-radius: 8px;
+        
       }
       
       table td {
@@ -191,11 +238,12 @@ export class Table extends LitElement {
       }
       .td-section {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
         justify-content: flex-start;
         font-size: 0.8rem;
         height: 100%;
+        gap: 0.5rem;
       }
       `
     ]
